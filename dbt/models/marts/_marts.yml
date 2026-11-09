@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: fct_daily_prices
+    description: >
+      Star-schema fact. Grain = symbol x trade_date. Incremental (delete+insert)
+      with a configurable lookback window.
+    data_tests:
+      - unique_combination:
+          columns: [symbol, trade_date]
+    columns:
+      - name: symbol
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_security')
+              field: symbol
+      - name: date_key
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: daily_return
+        description: Simple return vs. previous close. Large values would indicate DQ leakage.
+        data_tests:
+          - value_between:
+              min_value: -0.5
+              max_value: 0.5
+
+  - name: dim_security
+    columns:
+      - name: symbol
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]
+
+  - name: mart_technical_indicators
+    data_tests:
+      - unique_combination:
+          columns: [symbol, trade_date]
+    columns:
+      - name: rsi_14
+        data_tests:
+          - value_between:
+              min_value: 0
+              max_value: 100
+      - name: trend_regime
+        data_tests:
+          - accepted_values:
+              values: [bullish, bearish, insufficient_history]
+
+  - name: mart_sector_daily
+    data_tests:
+      - unique_combination:
+          columns: [trade_date, sector]
+
+  - name: mart_data_quality
+    columns:
+      - name: pass_rate
+        data_tests:
+          - value_between:
+              min_value: 0
+              max_value: 1

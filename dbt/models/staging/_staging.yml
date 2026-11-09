@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_prices
+    description: Typed and de-duplicated daily bars.
+    data_tests:
+      - unique_combination:
+          columns: [symbol, trade_date]
+    columns:
+      - name: symbol
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_securities')
+              field: symbol
+      - name: trade_date
+        data_tests: [not_null]
+      - name: close_price
+        data_tests: [not_null]
+      - name: volume
+        data_tests:
+          - value_between:
+              min_value: 0
+              max_value: 1e15
+
+  - name: stg_securities
+    description: Security master (seed).
+    columns:
+      - name: symbol
+        data_tests: [unique, not_null]
+      - name: sector
+        data_tests: [not_null]
+
+  - name: stg_pipeline_runs
+    columns:
+      - name: run_id
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              values: [success, failed, skipped]
+
+  - name: stg_dq_rule_results
+    data_tests:
+      - unique_combination:
+          columns: [run_id, rule_name]

@@ -1,0 +1,38 @@
+name: market_lakehouse
+version: "0.1.0"
+config-version: 2
+profile: market_lakehouse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Rows re-processed on each incremental run so window functions (returns,
+  # moving averages) see enough history and late-arriving corrections are applied.
+  incremental_lookback_days: 7
+
+models:
+  market_lakehouse:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  market_lakehouse:
+    +schema: reference
+    securities:
+      +column_types:
+        symbol: varchar
+        company_name: varchar
+        sector: varchar
+        industry: varchar
